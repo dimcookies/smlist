@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.11.2/jquery-ui.min.js"></script>
+    <title>Super Market</title>
+    <style>
+        body {
+        font: normal normal 13px/16px "Open Sans", sans-serif;
+        background: #dfdfdf;
+        }
+
+        .container{
+        padding: 5px;
+        /* width: 300px; */
+        margin: 0 auto;
+        /* margin-top: 40px; */
+        background: white;
+        border-radius: 5px;
+        }
+
+        /* form {
+        display: inline-block;
+        } */
+
+        /* input{
+        padding: 4px 15px 4px 5px;
+        }
+
+        #button{
+        display: inline-block;
+        background-color:#fc999b;
+        color:#ffffff;
+        border-radius: 5px;
+        text-align:center;
+        margin-top:2px;
+        padding: 5px 15px;
+        } */
+
+        /* #button:hover{
+        cursor: pointer;
+        opacity: .8;} */
+
+        ul {padding-left: 20px;}
+
+        ul li {padding: 5px;color:#000;}
+
+        ul li:nth-child(even){background: #dfdfdf;}
+
+        .strike{text-decoration: line-through;}
+
+        .impr{color: orangered;}
+
+        ul:hover{
+          cursor: pointer;
+        }
+    </style>
+
+<script>
+  $( function() {
+    var availableTags = [
+      
+
+      {% for dep in deps %}
+        "{{ dep }}",
+      {% endfor %} 
+
+    ];
+    $( "#ListCategory" ).autocomplete({
+      source: availableTags,
+      classes: {
+    "ui-autocomplete": "highlight"
+  }
+    });
+  } );
+  </script>
+
+    <script>
+      $(document).ready(
+    function(){
+        $('#button').click(
+            function(){
+                var title = $('input[name=ListItem]').val();
+                var department = $('input[name=ListCategory]').val();
+                $.get( 
+                  "/add",
+                  { 
+                      t: title, d: department
+                  }, 
+                  function(data) { 
+                    location.reload();
+                });  
+                
+                 //$('ul').append('<li>' + toAdd + '</li>');
+            });
+      
+      $(".completeClass").on('click', function(){
+          tmp = $(this); 
+          $.get( 
+                 "/complete",
+                 { 
+                     id: tmp.attr('id')
+                 }, 
+                 function(data) { 
+                  tmp.toggleClass('strike');
+          });         
+      });
+
+      $(".delClass").on('click', function(){
+          if (!confirm('Delete:   ' + $(this).parent().children("span").text() + " ?")) {
+            return;
+          }
+          tmp = $(this) ;
+          $.get( 
+                 "/delete", 
+                 { 
+                     id: tmp.attr('id')
+                 }, 
+                 function(data) { 
+                  tmp.parent().fadeOut('slow')
+          });         
+      });
+
+      $(".incrClass").on('click', function(){
+          tmp = $(this) ;
+          $.get( 
+                 "/increment", 
+                 { 
+                     id: tmp.attr('id')
+                 }, 
+                 function(data) {
+                  document.getElementById('n'+tmp.attr('id').substr(1)).innerHTML =  
+                  parseInt(document.getElementById('n'+tmp.attr('id').substr(1)).innerHTML)+1
+
+          });         
+      });
+
+      $(".importantClass").on('click', function(){
+          tmp = $(this) ;
+          $.get( 
+                 "/important", 
+                 { 
+                     id: tmp.attr('id')
+                 }, 
+                 function(data) { 
+                  document.getElementById('a'+tmp.attr('id').substr(1)).classList.toggle('impr');
+                 
+          });         
+      });
+
+
+      $("#searchButton").on('click', function(){
+        var search = $('input[name=searchTerm]').val();
+        window.location.replace("/?s="+search)
+      })
+
+      $("#option1").on('click', function(){
+        window.location.replace("/")
+      })
+
+      $("#option2").on('click', function(){
+        window.location.replace("/?pending")
+      })
+
+
+      
+    }
+);
+    </script>
+  </head>
+
+
+  <body>
+    <div class="container">
+
+    <form name="toDoList">
+
+      <div class="form-row align-items-center">
+        <div class="col-sm-3">
+          <input type="text" class="form-control" id="ListItem" name="ListItem" placeholder="Name">
+        </div>
+        <div class="col-sm-3 ui-widget" >
+          <input type="text" class="form-control" id="ListCategory" name="ListCategory" placeholder="Department">
+        </div>
+        <div class="col-auto">
+          <button id="button" type="button" class="btn btn-primary btn-sm">Add</button>
+        </div>
+      </div>
+
+    </form>
+
+
+    <br/>
+
+
+    <div class="btn-group btn-group-toggle" data-toggle="buttons">
+      <label class="btn btn-secondary {% if not pending %}active{% endif %} btn-sm">
+        <input type="radio" name="options" id="option1" autocomplete="off" {% if not pending %}checked{% endif %}> All
+      </label>
+      <label class="btn btn-secondary {% if pending %}active{% endif %} btn-sm">
+        <input type="radio" name="options" id="option2" autocomplete="off" {% if not pending %}checked{% endif %}> Pending
+      </label>
+    </div>
+    
+    <br/> <br/>
+
+    {% if not pending %}
+    <form name="searchForm">
+      <div class="form-row align-items-center">
+        <div class="col-sm-3">
+          <input type="text" class="form-control" id="searchTerm" name="searchTerm" placeholder="search">
+        </div>
+        <div class="col-auto">
+          <button id="searchButton" type="button" class="btn btn-primary btn-sm">Search</button>
+        </div>
+      </div>
+    </form>
+    {% endif %}
+
+
+    <br/>
+
+    <ul>
+  
+      {% for item in items %}
+      <li><span id="a{{ item[0] }}" class="completeClass {% if item[3] %}strike{% endif %} {% if item[5] %}impr{% endif %}">{{ item[1] }} ({{ item[2] }})  #<span id="n{{ item[0]}}" >{{ item[4] }}</span></span> 
+        <a id="v{{ item[0] }}" href="#" class="incrClass float-right badge badge-info">Amt</a>
+        <a id="i{{ item[0] }}" href="#" class="importantClass float-right badge badge-warning">Imp</a>
+        <a id="b{{ item[0] }}" href="#" class="delClass float-right badge badge-danger">Del</a>      </li>   
+      {% endfor %}          
+      
+      
+    </ul>
+      
+    
+    
+    </div>
+  </body>
+</html>
