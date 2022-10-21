@@ -13,6 +13,7 @@ DATABASE_URL = os.environ['DATABASE_URL']
 
 #conn = psycopg2.connect(DATABASE_URL, sslmode='require')
 conn = psycopg2.connect(DATABASE_URL)
+
 conn.autocommit = True
 
 app = Flask(__name__)
@@ -32,7 +33,7 @@ def get_departments(category):
     cur = conn.cursor()
     cur.execute("select distinct convert_to(department, 'utf-8') from items where category = %(cat)s order by 1;", {'cat': category})
     rows = cur.fetchall()
-    rows = map(lambda x: str(x[0]), rows)
+    rows = map(lambda x: x[0].tobytes().decode("utf-8"), rows)
     cur.close()
     return rows
 
@@ -55,7 +56,10 @@ def main():
         else:
             cur.execute("select id, convert_to(title, 'utf-8'), convert_to(department, 'utf-8'), completed,amount,important from items where category = %(cat)s order by 2;", {'cat': category})                        
     rows = cur.fetchall()
-    rows = map(lambda x: (x[0],str(x[1]), str(x[2]), x[3], x[4],x[5]), rows)
+    
+    
+
+    rows = map(lambda x: (x[0],x[1].tobytes().decode("utf-8") , x[2].tobytes().decode("utf-8"), x[3], x[4],x[5]), rows)
     cur.close()
 
     vals = {"items":rows, "pending":pending, "deps": get_departments(category)}
