@@ -19,6 +19,7 @@ conn.autocommit = True
 app = Flask(__name__)
 
 def get_cursor():
+    global conn
     if conn.closed == 1:
         conn = psycopg2.connect(DATABASE_URL)
     else:
