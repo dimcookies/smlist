@@ -18,6 +18,16 @@ conn.autocommit = True
 
 app = Flask(__name__)
 
+def get_cursor():
+    if conn.closed == 1:
+        conn = psycopg2.connect(DATABASE_URL)
+    else:
+        try:
+            cur = conn.cursor()
+            cur.execute('SELECT 1')
+        except:
+            conn = psycopg2.connect(DATABASE_URL)
+    return conn.cursor()
 
 def get_category(req):
     category = request.args.get('c')
@@ -30,7 +40,7 @@ def get_category(req):
     return category
 
 def get_departments(category):
-    cur = conn.cursor()
+    cur = get_cursor()
     cur.execute("select distinct convert_to(department, 'utf-8') from items where category = %(cat)s order by 1;", {'cat': category})
     rows = cur.fetchall()
     rows = map(lambda x: x[0].tobytes().decode("utf-8"), rows)
@@ -46,7 +56,7 @@ def main():
 
     pending = 'pending' in request.args
 
-    cur = conn.cursor()
+    cur = get_cursor()
     if pending:
         cur.execute("select id, convert_to(title, 'utf-8'), convert_to(department, 'utf-8'), completed,amount,important from items where completed=false and category = %(cat)s order by 3,2;", {'cat': category})
     else:
@@ -76,7 +86,7 @@ def delete_item():
 
     id = request.args.get('id')
     if id:
-        cur = conn.cursor()
+        cur = get_cursor()
         cur.execute("delete from items where id=%(id)s and category=%(category)s;", {'id': int(id[1:]), "category":category})
         cur.close()
 
@@ -92,7 +102,7 @@ def complete_item():
 
     id = request.args.get('id')
     if id:
-        cur = conn.cursor()
+        cur = get_cursor()
         cur.execute("update items set completed = NOT completed, amount=1,important=false where id=%(id)s and category=%(category)s;", {'id': int(id[1:]), "category":category})
         cur.close()        
     
@@ -107,7 +117,7 @@ def important_item():
 
     id = request.args.get('id')
     if id:
-        cur = conn.cursor()
+        cur = get_cursor()
         cur.execute("update items set important = NOT important where id=%(id)s and category=%(category)s;", {'id': int(id[1:]), "category":category})
         cur.close()        
     
@@ -122,7 +132,7 @@ def increment_item():
 
     id = request.args.get('id')
     if id:
-        cur = conn.cursor()
+        cur = get_cursor()
         cur.execute("update items set  amount=amount+1 where id=%(id)s and category=%(category)s;", {'id': int(id[1:]), "category":category})
         cur.close()        
     
@@ -138,7 +148,7 @@ def add_item():
     title = request.args.get('t')
     department = request.args.get('d')
     if title:
-        cur = conn.cursor()
+        cur = get_cursor()
         cur.execute("insert into items (title, department, completed, category) values (%(title)s, %(department)s, false, %(category)s);", {'title': title, "department":department, "category":category})
         cur.close()        
     
