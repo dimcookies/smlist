@@ -14,7 +14,7 @@ DATABASE_URL = os.environ['DATABASE_URL']
 #conn = psycopg2.connect(DATABASE_URL, sslmode='require')
 conn = psycopg2.connect(DATABASE_URL)
 
-conn.autocommit = True
+conn.autocommit = False
 
 app = Flask(__name__)
 
