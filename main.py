@@ -18,6 +18,11 @@ conn.autocommit = True
 
 app = Flask(__name__)
 
+def commit_conn():
+    global conn
+    if conn and conn.closed != 1:
+        conn.commit()
+
 def get_cursor():
     global conn
     if conn.closed == 1:
@@ -44,8 +49,9 @@ def get_departments(category):
     cur = get_cursor()
     cur.execute("select distinct convert_to(department, 'utf-8') from items where category = %(cat)s order by 1;", {'cat': category})
     rows = cur.fetchall()
-    rows = map(lambda x: x[0].tobytes().decode("utf-8"), rows)
+    rows = map(lambda x: x[0].tobytes().decode("utf-8"), rows)    
     cur.close()
+
     return rows
 
 @app.route('/')
@@ -89,6 +95,7 @@ def delete_item():
     if id:
         cur = get_cursor()
         cur.execute("delete from items where id=%(id)s and category=%(category)s;", {'id': int(id[1:]), "category":category})
+        commit_conn()
         cur.close()
 
     return jsonify({"status":"ok"})
@@ -105,6 +112,7 @@ def complete_item():
     if id:
         cur = get_cursor()
         cur.execute("update items set completed = NOT completed, amount=1,important=false where id=%(id)s and category=%(category)s;", {'id': int(id[1:]), "category":category})
+        commit_conn()
         cur.close()        
     
     return jsonify({"status":"ok"})
@@ -120,6 +128,7 @@ def important_item():
     if id:
         cur = get_cursor()
         cur.execute("update items set important = NOT important where id=%(id)s and category=%(category)s;", {'id': int(id[1:]), "category":category})
+        commit_conn()
         cur.close()        
     
     return jsonify({"status":"ok"})
@@ -135,6 +144,7 @@ def increment_item():
     if id:
         cur = get_cursor()
         cur.execute("update items set  amount=amount+1 where id=%(id)s and category=%(category)s;", {'id': int(id[1:]), "category":category})
+        commit_conn()
         cur.close()        
     
     return jsonify({"status":"ok"})    
@@ -151,6 +161,7 @@ def add_item():
     if title:
         cur = get_cursor()
         cur.execute("insert into items (title, department, completed, category) values (%(title)s, %(department)s, false, %(category)s);", {'title': title, "department":department, "category":category})
+        commit_conn()
         cur.close()        
     
     return jsonify({"status":"ok"})
